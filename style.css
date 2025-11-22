@@ -1,0 +1,122 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: #00ffea;
+}
+
+.container {
+    max-width: 1200px;
+    width: 100%;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #00ffea;
+}
+
+.header h1 {
+    font-size: 2.5em;
+}
+
+.header p {
+    font-size: 1em;
+    opacity: 0.8;
+}
+
+.fridge {
+    background: #111;
+    border: 1px solid #00ffea;
+    border-radius: 10px;
+    padding: 40px;
+    min-height: 600px;
+    position: relative;
+    overflow: hidden;
+}
+
+.fridge::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 50px;
+    background: #333;
+    border-radius: 5px;
+}
+
+.magnet {
+    position: absolute;
+    padding: 6px 12px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 3px;
+    cursor: move;
+    user-select: none;
+    color: #00ffea;
+    background: #222;
+    border: 1px solid #00ffea;
+    box-shadow: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+    z-index: 1;
+}
+
+.magnet:hover {
+    transform: translateY(-2px);
+    border-color: #00bfae;
+}
+
+.magnet:active {
+    transform: translateY(0);
+    cursor: grabbing;
+}
+
+.dragging {
+    opacity: 0.9;
+    z-index: 1000;
+}
+
+.info {
+    text-align: center;
+    margin-top: 20px;
+    color: #00ffea;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.reset-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 10px 30px;
+    background: #111;
+    border: 1px solid #00ffea;
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: bold;
+    color: #00ffea;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reset-btn:hover {
+    background: #222;
+    border-color: #00bfae;
+}
+
+.loading {
+    text-align: center;
+    color: #00ffea;
+    font-size: 1.2em;
+    padding: 40px;
+}

@@ -16,24 +16,34 @@ const originalPoem = [
     '#e17055', '#74b9ff', '#a29bfe', '#55efc4'
   ];
   
-  // UPDATED: backend now points to Render deployment
   const backendUrl = 'https://frigemagnet.onrender.com';
+  
   let positions = {}, dragged = null, offset = {};
   
-  // --- SOCKET.IO SETUP ---
-  const socket = io(backendUrl);
+  // --- POLLING FOR UPDATES ---
+  async function pollPositions() {
+    try {
+      const res = await fetch(`${backendUrl}/load`);
+      const newPositions = await res.json();
+      
+      // Only update if positions changed
+      if (JSON.stringify(newPositions) !== JSON.stringify(positions)) {
+        positions = newPositions;
+        applyPositions();
+      }
+    } catch (err) {
+      console.error('Poll error:', err);
+    }
+  }
   
-  // received when another user moves a word
-  socket.on("update_positions", newPositions => {
-    positions = newPositions || {};
-    applyPositions();
-  });
+  // Poll every 2 seconds for updates from other users
+  setInterval(pollPositions, 2000);
   
   // --- APPLY POSITIONS TO UI ---
   function applyPositions() {
     document.querySelectorAll('.magnet').forEach(m => {
       const i = m.dataset.index;
-      if (positions[i]) {
+      if (positions[i] && !m.classList.contains('dragging')) {
         m.style.left = positions[i].x + 'px';
         m.style.top = positions[i].y + 'px';
       }
@@ -60,7 +70,6 @@ const originalPoem = [
       magnet.style.backgroundColor = colors[i % colors.length];
       magnet.style.color = word === '•' ? '#333' : '#00ffea';
   
-      // default position if missing
       const row = Math.floor(i / 8), col = i % 8;
       const x = positions[i]?.x ?? 20 + col * 130;
       const y = positions[i]?.y ?? 20 + row * 60;
@@ -69,36 +78,42 @@ const originalPoem = [
       magnet.style.top = y + 'px';
       positions[i] = { x, y };
   
-      ['mousedown','touchstart'].forEach(e => magnet.addEventListener(e, startDrag));
+      magnet.addEventListener('mousedown', startDrag);
+      magnet.addEventListener('touchstart', startDrag);
       fridge.appendChild(magnet);
     });
   
-    applyPositions(); 
+    applyPositions();
   }
   
   // --- DRAGGING ---
   function startDrag(e) {
+    e.preventDefault();
     dragged = e.target;
     dragged.classList.add('dragging');
-    const rect = dragged.getBoundingClientRect();
+    
+    const fridgeRect = document.getElementById('fridge').getBoundingClientRect();
     const point = e.touches ? e.touches[0] : e;
-    offset.x = point.clientX - rect.left;
-    offset.y = point.clientY - rect.top;
+    
+    offset.x = point.clientX - fridgeRect.left - parseInt(dragged.style.left);
+    offset.y = point.clientY - fridgeRect.top - parseInt(dragged.style.top);
   
-    ['mousemove','touchmove'].forEach(ev => document.addEventListener(ev, drag));
-    ['mouseup','touchend'].forEach(ev => document.addEventListener(ev, stopDrag));
-    e.preventDefault();
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('touchend', stopDrag);
   }
   
   function drag(e) {
     if (!dragged) return;
+    e.preventDefault();
+    
     const fridgeRect = document.getElementById('fridge').getBoundingClientRect();
     const point = e.touches ? e.touches[0] : e;
   
     let x = point.clientX - fridgeRect.left - offset.x;
     let y = point.clientY - fridgeRect.top - offset.y;
   
-    // keep inside fridge area
     x = Math.max(0, Math.min(x, fridgeRect.width - dragged.offsetWidth));
     y = Math.max(0, Math.min(y, fridgeRect.height - dragged.offsetHeight));
   
@@ -106,8 +121,10 @@ const originalPoem = [
     dragged.style.top = y + 'px';
   }
   
-  async function stopDrag() {
+  async function stopDrag(e) {
     if (!dragged) return;
+    e.preventDefault();
+    
     dragged.classList.remove('dragging');
     const i = dragged.dataset.index;
   
@@ -122,10 +139,15 @@ const originalPoem = [
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({ positions })
       });
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+    }
   
-    ['mousemove','touchmove'].forEach(ev => document.removeEventListener(ev, drag));
-    ['mouseup','touchend'].forEach(ev => document.removeEventListener(ev, stopDrag));
+    document.removeEventListener('mousemove', drag);
+    document.removeEventListener('touchmove', drag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('touchend', stopDrag);
+    
     dragged = null;
   }
   
@@ -135,10 +157,10 @@ const originalPoem = [
     positions = {};
     try {
       await fetch(`${backendUrl}/reset`, { method:'POST' });
-    } catch(err) { console.error(err); }
+    } catch(err) { 
+      console.error(err); 
+    }
     initializeFridge();
   }
   
- 
   initializeFridge();
-  

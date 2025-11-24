@@ -11,14 +11,37 @@ const originalPoem = [
   ];
   
   const colors = [
-    '#ff6b6b','#4ecdc4','#45b7d1','#f9ca24',
-    '#6c5ce7','#fd79a8','#fdcb6e','#00b894',
-    '#e17055','#74b9ff','#a29bfe','#55efc4'
+    '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24',
+    '#6c5ce7', '#fd79a8', '#fdcb6e', '#00b894',
+    '#e17055', '#74b9ff', '#a29bfe', '#55efc4'
   ];
   
   const backendUrl = 'http://127.0.0.1:5000';
   let positions = {}, dragged = null, offset = {};
   
+  // --- SOCKET.IO SETUP ---
+  const socket = io(backendUrl);
+  
+  // received when another user moves a word
+  socket.on("update_positions", newPositions => {
+    positions = newPositions || {};
+    applyPositions();
+  });
+  
+  
+  // --- APPLY POSITIONS TO UI ---
+  function applyPositions() {
+    document.querySelectorAll('.magnet').forEach(m => {
+      const i = m.dataset.index;
+      if (positions[i]) {
+        m.style.left = positions[i].x + 'px';
+        m.style.top = positions[i].y + 'px';
+      }
+    });
+  }
+  
+  
+  // --- INITIALIZE ---
   async function initializeFridge() {
     const fridge = document.getElementById('fridge');
     fridge.innerHTML = '';
@@ -38,10 +61,11 @@ const originalPoem = [
       magnet.style.backgroundColor = colors[i % colors.length];
       magnet.style.color = word === '•' ? '#333' : '#00ffea';
   
-      // Default position if not saved
+      // default position if missing
       const row = Math.floor(i / 8), col = i % 8;
       const x = positions[i]?.x ?? 20 + col * 130;
       const y = positions[i]?.y ?? 20 + row * 60;
+  
       magnet.style.left = x + 'px';
       magnet.style.top = y + 'px';
       positions[i] = { x, y };
@@ -49,8 +73,12 @@ const originalPoem = [
       ['mousedown','touchstart'].forEach(e => magnet.addEventListener(e, startDrag));
       fridge.appendChild(magnet);
     });
+  
+    applyPositions(); 
   }
   
+  
+  // --- DRAGGING ---
   function startDrag(e) {
     dragged = e.target;
     dragged.classList.add('dragging');
@@ -72,19 +100,19 @@ const originalPoem = [
     let x = point.clientX - fridgeRect.left - offset.x;
     let y = point.clientY - fridgeRect.top - offset.y;
   
-    // Keep inside fridge
+    // keep inside fridge area
     x = Math.max(0, Math.min(x, fridgeRect.width - dragged.offsetWidth));
     y = Math.max(0, Math.min(y, fridgeRect.height - dragged.offsetHeight));
   
     dragged.style.left = x + 'px';
     dragged.style.top = y + 'px';
-    e.preventDefault();
   }
   
   async function stopDrag() {
     if (!dragged) return;
     dragged.classList.remove('dragging');
     const i = dragged.dataset.index;
+  
     positions[i] = {
       x: parseInt(dragged.style.left),
       y: parseInt(dragged.style.top)
@@ -93,7 +121,7 @@ const originalPoem = [
     try {
       await fetch(`${backendUrl}/save`, {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({ positions })
       });
     } catch (err) { console.error(err); }
@@ -103,10 +131,14 @@ const originalPoem = [
     dragged = null;
   }
   
+  
+  // --- RESET ---
   async function resetPoem() {
     if (!confirm('Reset the poem to original layout?')) return;
     positions = {};
-    try { await fetch(`${backendUrl}/reset`, { method:'POST' }); } catch(err){ console.error(err); }
+    try {
+      await fetch(`${backendUrl}/reset`, { method:'POST' });
+    } catch(err) { console.error(err); }
     initializeFridge();
   }
   

@@ -16,7 +16,8 @@ const originalPoem = [
     '#e17055', '#74b9ff', '#a29bfe', '#55efc4'
   ];
   
-  const backendUrl = 'http://127.0.0.1:5000';
+  // UPDATED: backend now points to Render deployment
+  const backendUrl = 'https://frigemagnet.onrender.com';
   let positions = {}, dragged = null, offset = {};
   
   // --- SOCKET.IO SETUP ---
@@ -28,7 +29,6 @@ const originalPoem = [
     applyPositions();
   });
   
-  
   // --- APPLY POSITIONS TO UI ---
   function applyPositions() {
     document.querySelectorAll('.magnet').forEach(m => {
@@ -39,7 +39,6 @@ const originalPoem = [
       }
     });
   }
-  
   
   // --- INITIALIZE ---
   async function initializeFridge() {
@@ -76,7 +75,6 @@ const originalPoem = [
   
     applyPositions(); 
   }
-  
   
   // --- DRAGGING ---
   function startDrag(e) {
@@ -131,7 +129,6 @@ const originalPoem = [
     dragged = null;
   }
   
-  
   // --- RESET ---
   async function resetPoem() {
     if (!confirm('Reset the poem to original layout?')) return;
@@ -142,5 +139,6 @@ const originalPoem = [
     initializeFridge();
   }
   
+ 
   initializeFridge();
   

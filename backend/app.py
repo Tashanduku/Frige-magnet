@@ -25,6 +25,12 @@ def save_positions(positions):
         json.dump(positions, f)
 
 
+
+@app.route('/')
+def home():
+    return jsonify({"message": "Frige Magnet backend is live!"})
+
+
 @app.route('/load', methods=['GET'])
 def load():
     positions = load_positions()

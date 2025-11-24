@@ -10,3 +10,4 @@ MarkupSafe==2.1.5
 Werkzeug==3.0.6
 zipp==3.20.2
 eventlet
+gunicorn==20.1.0
